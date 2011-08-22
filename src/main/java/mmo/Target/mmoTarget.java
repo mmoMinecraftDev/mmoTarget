@@ -57,8 +57,8 @@ public class mmoTarget extends JavaPlugin {
 		mmo = mmo.create(this);
 		mmo.mmoTarget = true;
 		mmo.setPluginName("Target");
-		mmo.setX(mmo.cfg.getInt("ui.default.left", 100));
-		mmo.setY(mmo.cfg.getInt("ui.default.top", 3));
+		mmo.cfg.getInt("ui.default.left", 0);
+		mmo.cfg.getInt("ui.default.top", 3);
 
 		mmo.log("loading " + description.getFullName());
 
@@ -111,19 +111,14 @@ public class mmoTarget extends JavaPlugin {
 				bar.setAnchor(WidgetAnchor.TOP_CENTER).setX(-bar.getWidth() / 2);
 				SpoutManager.getPlayer(player).getMainScreen().attachWidget(mmoTarget.mmo.plugin, bar);
 			}
-			bar.setHealth(health);
-			bar.setArmor(Math.max(0, mmo.getArmor(target)));
-			String name = mmo.getName(player, target);
-			if (target instanceof Player) {
-				if (targets.containsKey((Player) target)) {
-					name += "\n" + ChatColor.GRAY + "(" + mmo.getName(player, targets.get((Player) target)) + ChatColor.GRAY + ")";
-				}
-			} else if (target instanceof Creature) {
-				if (((Creature) target).getTarget() != null) {
-					name += "\n" + ChatColor.GRAY + "(" + mmo.getName(player, ((Creature) target).getTarget()) + ChatColor.GRAY + ")";
-				}
+			bar.setEntity(target);
+			if (target instanceof Player && targets.containsKey((Player) target)) {
+				bar.setTargets(targets.get((Player) target));
+			} else if (target instanceof Creature && ((Creature) target).getTarget() != null) {
+				bar.setTargets(((Creature) target).getTarget());
+			} else {
+				bar.setTargets();
 			}
-			bar.setLabel(name, "");
 		} else {
 			targets.remove(player);
 			GenericLivingEntity bar = bars.remove(player);
