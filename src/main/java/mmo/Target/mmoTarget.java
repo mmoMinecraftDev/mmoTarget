@@ -28,6 +28,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerListener;
@@ -36,7 +37,11 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.getspout.spoutapi.SpoutManager;
+import org.getspout.spoutapi.event.spout.SpoutCraftEnableEvent;
+import org.getspout.spoutapi.event.spout.SpoutListener;
+import org.getspout.spoutapi.gui.GenericContainer;
 import org.getspout.spoutapi.gui.WidgetAnchor;
+import org.getspout.spoutapi.player.SpoutPlayer;
 
 public class mmoTarget extends JavaPlugin {
 
@@ -47,7 +52,8 @@ public class mmoTarget extends JavaPlugin {
 	private int updateTask;
 	protected static final HashMap<Player, LivingEntity> targets = new HashMap<Player, LivingEntity>();
 	protected static final HashMap<Player, GenericLivingEntity> bars = new HashMap<Player, GenericLivingEntity>();
-
+	protected static final HashMap<Player, GenericContainer> containers = new HashMap<Player, GenericContainer>();
+	
 	@Override
 	public void onEnable() {
 		server = getServer();
@@ -57,6 +63,8 @@ public class mmoTarget extends JavaPlugin {
 		mmo = mmo.create(this);
 		mmo.mmoTarget = true;
 		mmo.setPluginName("Target");
+		mmo.cfg.getInt("max_range", 15);
+		mmo.cfg.getString("ui.default.align", "TOP_CENTER");
 		mmo.cfg.getInt("ui.default.left", 0);
 		mmo.cfg.getInt("ui.default.top", 3);
 
@@ -72,7 +80,11 @@ public class mmoTarget extends JavaPlugin {
 		mmoTargetEntityListener tel = new mmoTargetEntityListener();
 		pm.registerEvent(Type.ENTITY_DEATH, tel, Priority.Monitor, this);
 		pm.registerEvent(Type.ENTITY_DAMAGE, tel, Priority.Monitor, this);
+		pm.registerEvent(Type.ENTITY_EXPLODE, tel, Priority.Monitor, this);
 		pm.registerEvent(Type.PROJECTILE_HIT, tel, Priority.Monitor, this); // craftbukkit 1000
+
+		mmoSpoutListener sl = new mmoSpoutListener();
+		pm.registerEvent(Type.CUSTOM_EVENT, sl, Priority.Normal, this);
 
 		updateTask = server.getScheduler().scheduleSyncRepeatingTask(this,
 			new Runnable() {
@@ -100,37 +112,37 @@ public class mmoTarget extends JavaPlugin {
 	}
 
 	public static void update(Player player) {
-		int health;
-
 		LivingEntity target = targets.get(player);
-		health = mmo.getHealth(target);
-		if (health > 0) {
-			GenericLivingEntity bar = bars.get(player);
-			if (bar == null) {
-				bars.put(player, bar = new GenericLivingEntity());
-				bar.setAnchor(WidgetAnchor.TOP_CENTER).setX(-bar.getWidth() / 2);
-				SpoutManager.getPlayer(player).getMainScreen().attachWidget(mmoTarget.mmo.plugin, bar);
-			}
-			bar.setEntity(target);
-			if (target instanceof Player && targets.containsKey((Player) target)) {
-				bar.setTargets(targets.get((Player) target));
-			} else if (target instanceof Creature) {
-				bar.setTargets(((Creature) target).getTarget());
+		if (target != null) {
+			int health = mmo.getHealth(target);
+			if (!target.isDead()
+				  && health > 0
+				  && player.getWorld() == target.getWorld()
+				  && player.getLocation().distance(target.getLocation()) <= mmo.cfg.getInt("max_range", 15)) {
+				GenericLivingEntity bar = bars.get(player);
+				if (bar == null) {
+					bars.put(player, bar = new GenericLivingEntity());
+					GenericContainer container = containers.get(player);
+					container.addChild(bar);
+				}
+				bar.setEntity(target);
+				if (target instanceof Player && targets.containsKey((Player) target)) {
+					bar.setTargets(targets.get((Player) target));
+				} else if (target instanceof Creature && ((Creature) target).getTarget() != null && !((Creature) target).getTarget().isDead()) {
+					bar.setTargets(((Creature) target).getTarget());
+				} else {
+					bar.setTargets();
+				}
 			} else {
-				bar.setTargets();
-			}
-		} else {
-			targets.remove(player);
-			GenericLivingEntity bar = bars.remove(player);
-			if (bar != null && bar.getScreen() != null) {
-				bar.getScreen().removeWidget(bar);
+				targets.remove(player);
+				GenericLivingEntity bar = bars.remove(player);
+				if (bar != null) {
+					bar.getContainer().removeChild(bar);
+				}
 			}
 		}
 	}
 
-	/**
-	 * Player listener
-	 */
 	private class mmoTargetPlayerListener extends PlayerListener {
 
 		@Override
@@ -138,35 +150,53 @@ public class mmoTarget extends JavaPlugin {
 			Player player = event.getPlayer();
 			Entity target = event.getRightClicked();
 			if (target instanceof LivingEntity) {
-				mmoTarget.targets.put(player, (LivingEntity) target);
-				mmoTarget.update(player);
+				targets.put(player, (LivingEntity) target);
+				update(player);
 			}
 		}
 
 		@Override
 		public void onPlayerMove(PlayerMoveEvent event) {
 			Player player = event.getPlayer();
-			Entity target = mmoTarget.targets.get(player);
-			if (target != null && player.getLocation().distance(target.getLocation()) > 15) {
-				mmoTarget.targets.remove(player);
-				GenericLivingEntity bar = mmoTarget.bars.remove(player);
-				bar.getScreen().removeWidget(bar);
-			}
+			update(player);
 		}
 	}
 
-	/**
-	 * Entity Listener
-	 */
+	public class mmoSpoutListener extends SpoutListener {
+
+		@Override
+		public void onSpoutCraftEnable(SpoutCraftEnableEvent event) {
+			SpoutPlayer player = SpoutManager.getPlayer(event.getPlayer());
+			GenericContainer container = mmo.getContainer();
+			containers.put(player, container);
+			player.getMainScreen().attachWidget(mmo.plugin, container);
+		}
+	}
+
 	private class mmoTargetEntityListener extends EntityListener {
 
 		@Override
 		public void onEntityDeath(EntityDeathEvent event) {
 			Entity target = event.getEntity();
-			if (target instanceof LivingEntity && mmoTarget.targets.containsValue((LivingEntity) target)) {
-				for (Player player : ((HashMap<Player, LivingEntity>) mmoTarget.targets.clone()).keySet()) {
-					if (target.equals(mmoTarget.targets.get(player))) {
-						mmoTarget.update(player);
+			if (target instanceof LivingEntity && targets.containsValue((LivingEntity) target)) {
+				for (Player player : ((HashMap<Player, LivingEntity>) targets.clone()).keySet()) {
+					if (target.equals(targets.get(player))) {
+						update(player);
+					}
+				}
+			}
+		}
+
+		@Override
+		public void onEntityExplode(EntityExplodeEvent event) {
+			if (event.isCancelled()) {
+				return;
+			}
+			Entity target = event.getEntity();
+			if (target instanceof LivingEntity && targets.containsValue((LivingEntity) target)) {
+				for (Player player : ((HashMap<Player, LivingEntity>) targets.clone()).keySet()) {
+					if (target.equals(targets.get(player))) {
+						update(player);
 					}
 				}
 			}
@@ -201,13 +231,13 @@ public class mmoTarget extends JavaPlugin {
 						attacker = arrow.getShooter();
 					}
 				}
-				if (defender instanceof Player && attacker != null && !mmoTarget.targets.containsKey((Player) defender)) {
-					mmoTarget.targets.put((Player) defender, attacker);
-					mmoTarget.update((Player) defender);
+				if (defender instanceof Player && attacker != null && !targets.containsKey((Player) defender)) {
+					targets.put((Player) defender, attacker);
+					update((Player) defender);
 				}
 				if (attacker instanceof Player && defender != null) {
-					mmoTarget.targets.put((Player) attacker, defender);
-					mmoTarget.update((Player) attacker);
+					targets.put((Player) attacker, defender);
+					update((Player) attacker);
 				}
 			}
 		}
