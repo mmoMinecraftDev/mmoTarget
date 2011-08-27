@@ -1,6 +1,6 @@
 name: mmoTarget
 main: mmo.Target.mmoTarget
-version: 0.15
+version: 0.16
 website: http://forums.bukkit.org/threads/31056/
 author: Rycochet <rycochet@rycochet.com>
 depend: [mmoCore]
