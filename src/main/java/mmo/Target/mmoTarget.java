@@ -117,25 +117,29 @@ public class mmoTarget extends JavaPlugin {
 					  && health > 0
 					  && player.getWorld() == target.getWorld()
 					  && player.getLocation().distance(target.getLocation()) <= mmo.cfg.getInt("max_range", 15)) {
-				GenericLivingEntity bar = bars.get(player);
-				if (bar == null) {
-					bars.put(player, bar = new GenericLivingEntity());
-					GenericContainer container = containers.get(player);
-					container.addChild(bar);
-				}
-				bar.setEntity(target);
-				if (target instanceof Player && targets.containsKey((Player) target)) {
-					bar.setTargets(targets.get((Player) target));
-				} else if (target instanceof Creature && ((Creature) target).getTarget() != null && !((Creature) target).getTarget().isDead()) {
-					bar.setTargets(((Creature) target).getTarget());
-				} else {
-					bar.setTargets();
+				if (mmo.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
+					GenericLivingEntity bar = bars.get(player);
+					if (bar == null) {
+						bars.put(player, bar = new GenericLivingEntity());
+						GenericContainer container = containers.get(player);
+						container.addChild(bar);
+					}
+					bar.setEntity(target);
+					if (target instanceof Player && targets.containsKey((Player) target)) {
+						bar.setTargets(targets.get((Player) target));
+					} else if (target instanceof Creature && ((Creature) target).getTarget() != null && !((Creature) target).getTarget().isDead()) {
+						bar.setTargets(((Creature) target).getTarget());
+					} else {
+						bar.setTargets();
+					}
 				}
 			} else {
 				targets.remove(player);
-				GenericLivingEntity bar = bars.remove(player);
-				if (bar != null) {
-					bar.getContainer().removeChild(bar);
+				if (mmo.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
+					GenericLivingEntity bar = bars.remove(player);
+					if (bar != null) {
+						bar.getContainer().removeChild(bar);
+					}
 				}
 			}
 		}
