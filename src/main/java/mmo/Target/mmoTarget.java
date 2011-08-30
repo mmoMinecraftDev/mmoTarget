@@ -145,7 +145,7 @@ public class mmoTarget extends JavaPlugin {
 		}
 	}
 
-	private class mmoTargetPlayerListener extends PlayerListener {
+	private static class mmoTargetPlayerListener extends PlayerListener {
 
 		@Override
 		public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
@@ -164,7 +164,7 @@ public class mmoTarget extends JavaPlugin {
 		}
 	}
 
-	public class mmoSpoutListener extends SpoutListener {
+	public static class mmoSpoutListener extends SpoutListener {
 
 		@Override
 		public void onSpoutCraftEnable(SpoutCraftEnableEvent event) {
@@ -175,7 +175,7 @@ public class mmoTarget extends JavaPlugin {
 		}
 	}
 
-	private class mmoTargetEntityListener extends EntityListener {
+	private static class mmoTargetEntityListener extends EntityListener {
 
 		@Override
 		public void onEntityDeath(EntityDeathEvent event) {
