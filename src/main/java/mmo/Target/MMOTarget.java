@@ -103,6 +103,7 @@ public class MMOTarget extends JavaPlugin {
 		MMO.mmoTarget = false;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static void updateAll() {
 		for (Player player : ((HashMap<Player, LivingEntity>) targets.clone()).keySet()) {
 			update(player);
@@ -177,6 +178,7 @@ public class MMOTarget extends JavaPlugin {
 
 	private static class mmoTargetEntityListener extends EntityListener {
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void onEntityDeath(EntityDeathEvent event) {
 			Entity target = event.getEntity();
@@ -189,6 +191,7 @@ public class MMOTarget extends JavaPlugin {
 			}
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void onEntityExplode(EntityExplodeEvent event) {
 			if (event.isCancelled()) {
