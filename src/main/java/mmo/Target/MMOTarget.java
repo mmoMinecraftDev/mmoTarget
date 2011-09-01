@@ -18,7 +18,7 @@ package mmo.Target;
 
 import java.util.HashMap;
 import mmo.Core.GenericLivingEntity;
-import mmo.Core.mmo;
+import mmo.Core.MMO;
 import org.bukkit.Server;
 import org.bukkit.entity.*;
 import org.bukkit.event.Event.Priority;
@@ -41,12 +41,12 @@ import org.getspout.spoutapi.event.spout.SpoutListener;
 import org.getspout.spoutapi.gui.GenericContainer;
 import org.getspout.spoutapi.player.SpoutPlayer;
 
-public class mmoTarget extends JavaPlugin {
+public class MMOTarget extends JavaPlugin {
 
 	protected static Server server;
 	protected static PluginManager pm;
 	protected static PluginDescriptionFile description;
-	protected static mmo mmo;
+	protected static MMO mmo;
 	private int updateTask;
 	protected static final HashMap<Player, LivingEntity> targets = new HashMap<Player, LivingEntity>();
 	protected static final HashMap<Player, GenericLivingEntity> bars = new HashMap<Player, GenericLivingEntity>();
@@ -58,8 +58,8 @@ public class mmoTarget extends JavaPlugin {
 		pm = server.getPluginManager();
 		description = getDescription();
 
-		mmo = mmo.create(this);
-		mmo.mmoTarget = true;
+		mmo = MMO.create(this);
+		MMO.mmoTarget = true;
 		mmo.setPluginName("Target");
 		mmo.cfg.getInt("max_range", 15);
 		mmo.cfg.getString("ui.default.align", "TOP_CENTER");
@@ -89,7 +89,7 @@ public class mmoTarget extends JavaPlugin {
 
 					  @Override
 					  public void run() {
-						  mmoTarget.updateAll();
+						  MMOTarget.updateAll();
 					  }
 				  }, 20, 20);
 	}
@@ -100,7 +100,7 @@ public class mmoTarget extends JavaPlugin {
 		targets.clear();
 		mmo.log("Disabled " + description.getFullName());
 		mmo.autoUpdate();
-		mmo.mmoTarget = false;
+		MMO.mmoTarget = false;
 	}
 
 	public static void updateAll() {
@@ -112,12 +112,12 @@ public class mmoTarget extends JavaPlugin {
 	public static void update(Player player) {
 		LivingEntity target = targets.get(player);
 		if (target != null) {
-			int health = mmo.getHealth(target);
+			int health = MMO.getHealth(target);
 			if (!target.isDead()
 					  && health > 0
 					  && player.getWorld() == target.getWorld()
 					  && player.getLocation().distance(target.getLocation()) <= mmo.cfg.getInt("max_range", 15)) {
-				if (mmo.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
+				if (MMO.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
 					GenericLivingEntity bar = bars.get(player);
 					if (bar == null) {
 						bars.put(player, bar = new GenericLivingEntity());
@@ -135,7 +135,7 @@ public class mmoTarget extends JavaPlugin {
 				}
 			} else {
 				targets.remove(player);
-				if (mmo.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
+				if (MMO.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
 					GenericLivingEntity bar = bars.remove(player);
 					if (bar != null) {
 						bar.getContainer().removeChild(bar);
