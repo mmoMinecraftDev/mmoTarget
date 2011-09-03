@@ -64,8 +64,8 @@
             <version>dev</version>
         </dependency>
     </dependencies>
-    <artifactId>MMOTarget</artifactId>
-    <name>MMOTarget</name>
+    <artifactId>mmoTarget</artifactId>
+    <name>mmoTarget</name>
     <version>dev</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
