@@ -1,7 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>mmo.Target.MMOTarget</groupId>
-    <url>http://levelnull.de/</url>
     <repositories>
         <repository>
             <id>bukkit-repo</id>
@@ -60,14 +58,16 @@
         </dependency>
         <dependency>
             <groupId>mmo.Core.MMOCore</groupId>
-            <artifactId>MMOCore</artifactId>
+            <artifactId>mmoCore</artifactId>
             <version>dev</version>
         </dependency>
     </dependencies>
-    <artifactId>mmoTarget</artifactId>
     <name>mmoTarget</name>
-    <version>dev</version>
+    <artifactId>mmoTarget</artifactId>
+    <groupId>mmo.Target.MMOTarget</groupId>
+    <url>http://levelnull.de/</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <version>dev</version>
 </project>
