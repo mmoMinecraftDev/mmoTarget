@@ -65,7 +65,7 @@
     <name>mmoTarget</name>
     <artifactId>mmoTarget</artifactId>
     <groupId>mmo.Target.MMOTarget</groupId>
-    <url>http://levelnull.de/</url>
+    <url>http://github.com/mmoMinecraftDev/mmoTarget</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
