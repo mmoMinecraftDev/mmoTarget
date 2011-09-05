@@ -17,7 +17,7 @@
 package mmo.Target;
 
 import java.util.HashMap;
-import mmo.Core.GenericLivingEntity;
+import mmo.Core.gui.GenericLivingEntity;
 import mmo.Core.MMO;
 import mmo.Core.MMOPlugin;
 import org.bukkit.entity.*;
