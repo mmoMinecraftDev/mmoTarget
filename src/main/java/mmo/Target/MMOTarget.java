@@ -19,7 +19,7 @@ package mmo.Target;
 import java.util.HashMap;
 import mmo.Core.GenericLivingEntity;
 import mmo.Core.MMO;
-import org.bukkit.Server;
+import mmo.Core.MMOPlugin;
 import org.bukkit.entity.*;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event.Type;
@@ -32,44 +32,31 @@ import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.config.Configuration;
 import org.getspout.spoutapi.SpoutManager;
 import org.getspout.spoutapi.event.spout.SpoutCraftEnableEvent;
 import org.getspout.spoutapi.event.spout.SpoutListener;
 import org.getspout.spoutapi.gui.GenericContainer;
 import org.getspout.spoutapi.player.SpoutPlayer;
 
-public class MMOTarget extends JavaPlugin {
+public class MMOTarget extends MMOPlugin {
 
-	protected static Server server;
-	protected static PluginManager pm;
-	protected static PluginDescriptionFile description;
-	protected static MMO mmo;
 	private int updateTask;
 	protected static final HashMap<Player, LivingEntity> targets = new HashMap<Player, LivingEntity>();
 	protected static final HashMap<Player, GenericLivingEntity> bars = new HashMap<Player, GenericLivingEntity>();
 	protected static final HashMap<Player, GenericContainer> containers = new HashMap<Player, GenericContainer>();
+	/**
+	 * Config values
+	 */
+	String config_ui_align = "TOP_LEFT";
+	int config_ui_left = 3;
+	int config_ui_top = 3;
+	static int config_max_range = 15;
 
 	@Override
 	public void onEnable() {
-		server = getServer();
-		pm = server.getPluginManager();
-		description = getDescription();
-
-		mmo = MMO.create(this);
+		super.onEnable();
 		MMO.mmoTarget = true;
-		mmo.setPluginName("Target");
-		mmo.cfg.getInt("max_range", 15);
-		mmo.cfg.getString("ui.default.align", "TOP_CENTER");
-		mmo.cfg.getInt("ui.default.left", 0);
-		mmo.cfg.getInt("ui.default.top", 3);
-
-		mmo.log("loading " + description.getFullName());
-
-		mmo.cfg.getBoolean("auto_update", true);
-		mmo.cfg.save();
 
 		mmoTargetPlayerListener tpl = new mmoTargetPlayerListener();
 		pm.registerEvent(Type.PLAYER_INTERACT_ENTITY, tpl, Priority.Monitor, this);
@@ -95,12 +82,20 @@ public class MMOTarget extends JavaPlugin {
 	}
 
 	@Override
+	public void loadConfiguration(Configuration cfg) {
+		config_ui_align = cfg.getString("ui.default.align", config_ui_align);
+		config_ui_left = cfg.getInt("ui.default.left", config_ui_left);
+		config_ui_top = cfg.getInt("ui.default.top", config_ui_top);
+		config_max_range = cfg.getInt("max_range", config_max_range);
+	}
+
+	@Override
 	public void onDisable() {
 		server.getScheduler().cancelTask(updateTask);
 		targets.clear();
-		mmo.log("Disabled " + description.getFullName());
-		mmo.autoUpdate();
+//		mmo.autoUpdate();
 		MMO.mmoTarget = false;
+		super.onDisable();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -117,8 +112,8 @@ public class MMOTarget extends JavaPlugin {
 			if (!target.isDead()
 					  && health > 0
 					  && player.getWorld() == target.getWorld()
-					  && player.getLocation().distance(target.getLocation()) <= mmo.cfg.getInt("max_range", 15)) {
-				if (MMO.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
+					  && player.getLocation().distance(target.getLocation()) <= config_max_range) {
+				if (MMOPlugin.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
 					GenericLivingEntity bar = bars.get(player);
 					if (bar == null) {
 						bars.put(player, bar = new GenericLivingEntity());
@@ -136,7 +131,7 @@ public class MMOTarget extends JavaPlugin {
 				}
 			} else {
 				targets.remove(player);
-				if (MMO.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
+				if (MMOPlugin.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
 					GenericLivingEntity bar = bars.remove(player);
 					if (bar != null) {
 						bar.getContainer().removeChild(bar);
@@ -165,18 +160,18 @@ public class MMOTarget extends JavaPlugin {
 		}
 	}
 
-	public static class mmoSpoutListener extends SpoutListener {
+	public class mmoSpoutListener extends SpoutListener {
 
 		@Override
 		public void onSpoutCraftEnable(SpoutCraftEnableEvent event) {
 			SpoutPlayer player = SpoutManager.getPlayer(event.getPlayer());
-			GenericContainer container = mmo.getContainer();
+			GenericContainer container = plugin.getContainer();
 			containers.put(player, container);
-			player.getMainScreen().attachWidget(mmo.plugin, container);
+			player.getMainScreen().attachWidget(plugin, container);
 		}
 	}
 
-	private static class mmoTargetEntityListener extends EntityListener {
+	private class mmoTargetEntityListener extends EntityListener {
 
 		@SuppressWarnings("unchecked")
 		@Override
