@@ -165,7 +165,7 @@ public class MMOTarget extends MMOPlugin {
 		@Override
 		public void onSpoutCraftEnable(SpoutCraftEnableEvent event) {
 			SpoutPlayer player = SpoutManager.getPlayer(event.getPlayer());
-			GenericContainer container = plugin.getContainer();
+			GenericContainer container = plugin.getContainer(config_ui_align, config_ui_left, config_ui_top);
 			containers.put(player, container);
 			player.getMainScreen().attachWidget(plugin, container);
 		}
