@@ -16,6 +16,7 @@
  */
 package mmo.Target;
 
+import java.util.BitSet;
 import java.util.HashMap;
 import mmo.Core.gui.GenericLivingEntity;
 import mmo.Core.MMO;
@@ -34,9 +35,7 @@ import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.config.Configuration;
 import org.getspout.spoutapi.SpoutManager;
-import org.getspout.spoutapi.event.spout.SpoutCraftEnableEvent;
-import org.getspout.spoutapi.event.spout.SpoutListener;
-import org.getspout.spoutapi.gui.GenericContainer;
+import org.getspout.spoutapi.gui.Container;
 import org.getspout.spoutapi.player.SpoutPlayer;
 
 public class MMOTarget extends MMOPlugin {
@@ -44,14 +43,21 @@ public class MMOTarget extends MMOPlugin {
 	private int updateTask;
 	protected static final HashMap<Player, LivingEntity> targets = new HashMap<Player, LivingEntity>();
 	protected static final HashMap<Player, GenericLivingEntity> bars = new HashMap<Player, GenericLivingEntity>();
-	protected static final HashMap<Player, GenericContainer> containers = new HashMap<Player, GenericContainer>();
+	protected static final HashMap<Player, Container> containers = new HashMap<Player, Container>();
 	/**
 	 * Config values
 	 */
 	String config_ui_align = "TOP_LEFT";
 	int config_ui_left = 3;
 	int config_ui_top = 3;
+	static int config_ui_maxwidth = 160;
 	static int config_max_range = 15;
+
+	@Override
+	public BitSet mmoSupport(BitSet support) {
+		support.set(MMO_PLAYER);
+		return support;
+	}
 
 	@Override
 	public void onEnable() {
@@ -68,9 +74,6 @@ public class MMOTarget extends MMOPlugin {
 		pm.registerEvent(Type.ENTITY_EXPLODE, tel, Priority.Monitor, this);
 		pm.registerEvent(Type.PROJECTILE_HIT, tel, Priority.Monitor, this); // craftbukkit 1000
 
-		mmoSpoutListener sl = new mmoSpoutListener();
-		pm.registerEvent(Type.CUSTOM_EVENT, sl, Priority.Normal, this);
-
 		updateTask = server.getScheduler().scheduleSyncRepeatingTask(this,
 				  new Runnable() {
 
@@ -86,6 +89,7 @@ public class MMOTarget extends MMOPlugin {
 		config_ui_align = cfg.getString("ui.default.align", config_ui_align);
 		config_ui_left = cfg.getInt("ui.default.left", config_ui_left);
 		config_ui_top = cfg.getInt("ui.default.top", config_ui_top);
+		config_ui_maxwidth = cfg.getInt("ui.default.width", config_ui_maxwidth);
 		config_max_range = cfg.getInt("max_range", config_max_range);
 	}
 
@@ -93,12 +97,19 @@ public class MMOTarget extends MMOPlugin {
 	public void onDisable() {
 		server.getScheduler().cancelTask(updateTask);
 		targets.clear();
-//		mmo.autoUpdate();
 		MMO.mmoTarget = false;
 		super.onDisable();
 	}
 
-	@SuppressWarnings("unchecked")
+	@Override
+	public void onSpoutCraftPlayer(SpoutPlayer player) {
+		Container container = getContainer(config_ui_align, config_ui_left, config_ui_top);
+		container.setAuto(false);
+		containers.put(player, container);
+		player.getMainScreen().attachWidget(this, container);
+	}
+
+//	@SuppressWarnings("unchecked")
 	public static void updateAll() {
 		for (Player player : ((HashMap<Player, LivingEntity>) targets.clone()).keySet()) {
 			update(player);
@@ -117,7 +128,7 @@ public class MMOTarget extends MMOPlugin {
 					GenericLivingEntity bar = bars.get(player);
 					if (bar == null) {
 						bars.put(player, bar = new GenericLivingEntity());
-						GenericContainer container = containers.get(player);
+						Container container = containers.get(player);
 						container.addChild(bar);
 					}
 					bar.setEntity(target);
@@ -157,17 +168,6 @@ public class MMOTarget extends MMOPlugin {
 		public void onPlayerMove(PlayerMoveEvent event) {
 			Player player = event.getPlayer();
 			update(player);
-		}
-	}
-
-	public class mmoSpoutListener extends SpoutListener {
-
-		@Override
-		public void onSpoutCraftEnable(SpoutCraftEnableEvent event) {
-			SpoutPlayer player = SpoutManager.getPlayer(event.getPlayer());
-			GenericContainer container = plugin.getContainer(config_ui_align, config_ui_left, config_ui_top);
-			containers.put(player, container);
-			player.getMainScreen().attachWidget(plugin, container);
 		}
 	}
 
