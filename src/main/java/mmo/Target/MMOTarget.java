@@ -103,10 +103,8 @@ public class MMOTarget extends MMOPlugin {
 
 	@Override
 	public void onSpoutCraftPlayer(SpoutPlayer player) {
-		Container container = getContainer(config_ui_align, config_ui_left, config_ui_top);
-		container.setAuto(false);
+		Container container = getContainer(player, config_ui_align, config_ui_left, config_ui_top).setAuto(false);
 		containers.put(player, container);
-		player.getMainScreen().attachWidget(this, container);
 	}
 
 //	@SuppressWarnings("unchecked")
