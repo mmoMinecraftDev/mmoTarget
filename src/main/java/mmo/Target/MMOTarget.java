@@ -47,8 +47,8 @@ public class MMOTarget extends MMOPlugin {
 	/**
 	 * Config values
 	 */
-	String config_ui_align = "TOP_LEFT";
-	int config_ui_left = 3;
+	String config_ui_align = "TOP_CENTER";
+	int config_ui_left = 0;
 	int config_ui_top = 3;
 	static int config_ui_maxwidth = 160;
 	static int config_max_range = 15;
