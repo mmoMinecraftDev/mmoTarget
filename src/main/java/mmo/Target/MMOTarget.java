@@ -62,7 +62,6 @@ public class MMOTarget extends MMOPlugin {
 	@Override
 	public void onEnable() {
 		super.onEnable();
-		MMO.mmoTarget = true;
 
 		mmoTargetPlayerListener tpl = new mmoTargetPlayerListener();
 		pm.registerEvent(Type.PLAYER_INTERACT_ENTITY, tpl, Priority.Monitor, this);
@@ -97,7 +96,6 @@ public class MMOTarget extends MMOPlugin {
 	public void onDisable() {
 		server.getScheduler().cancelTask(updateTask);
 		targets.clear();
-		MMO.mmoTarget = false;
 		super.onDisable();
 	}
 
