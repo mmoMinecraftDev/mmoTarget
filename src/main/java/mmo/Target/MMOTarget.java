@@ -16,11 +16,11 @@
  */
 package mmo.Target;
 
-import java.util.BitSet;
 import java.util.HashMap;
 import mmo.Core.gui.GenericLivingEntity;
 import mmo.Core.MMO;
 import mmo.Core.MMOPlugin;
+import mmo.Core.util.EnumBitSet;
 import org.bukkit.entity.*;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event.Type;
@@ -54,8 +54,8 @@ public class MMOTarget extends MMOPlugin {
 	static int config_max_range = 15;
 
 	@Override
-	public BitSet mmoSupport(BitSet support) {
-		support.set(MMO_PLAYER);
+	public EnumBitSet mmoSupport(EnumBitSet support) {
+		support.set(Support.MMO_PLAYER);
 		return support;
 	}
 
