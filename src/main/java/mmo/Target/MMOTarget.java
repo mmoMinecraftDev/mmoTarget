@@ -120,7 +120,7 @@ public class MMOTarget extends MMOPlugin {
 					  && health > 0
 					  && player.getWorld() == target.getWorld()
 					  && player.getLocation().distance(target.getLocation()) <= config_max_range) {
-				if (MMOPlugin.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
+				if (SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
 					GenericLivingEntity bar = bars.get(player);
 					if (bar == null) {
 						bars.put(player, bar = new GenericLivingEntity());
@@ -138,7 +138,7 @@ public class MMOTarget extends MMOPlugin {
 				}
 			} else {
 				targets.remove(player);
-				if (MMOPlugin.hasSpout && SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
+				if (SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
 					GenericLivingEntity bar = bars.remove(player);
 					if (bar != null) {
 						bar.getContainer().removeChild(bar);

@@ -3,6 +3,6 @@ main: mmo.Target.MMOTarget
 version: 1.2
 website: http://forums.bukkit.org/threads/31056/
 author: Rycochet <rycochet@rycochet.com>
-depend: [mmoCore]
+depend: [Spout,mmoCore]
 
 description: Lets you target an enemy (or friend) showing their health on the screen.
