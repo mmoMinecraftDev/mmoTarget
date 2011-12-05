@@ -27,23 +27,18 @@ import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerListener;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.config.Configuration;
-import org.getspout.spoutapi.SpoutManager;
 import org.getspout.spoutapi.gui.Container;
+import org.getspout.spoutapi.gui.ContainerType;
+import org.getspout.spoutapi.gui.GenericContainer;
 import org.getspout.spoutapi.player.SpoutPlayer;
 
 public class MMOTarget extends MMOPlugin {
 
-	private int updateTask;
-	protected static final HashMap<Player, LivingEntity> targets = new HashMap<Player, LivingEntity>();
-	protected static final HashMap<Player, GenericLivingEntity> bars = new HashMap<Player, GenericLivingEntity>();
-	protected static final HashMap<Player, Container> containers = new HashMap<Player, Container>();
+	protected static final HashMap<Player, perPlayer> data = new HashMap<Player, perPlayer>();
 	/**
 	 * Config values
 	 */
@@ -65,22 +60,9 @@ public class MMOTarget extends MMOPlugin {
 
 		mmoTargetPlayerListener tpl = new mmoTargetPlayerListener();
 		pm.registerEvent(Type.PLAYER_INTERACT_ENTITY, tpl, Priority.Monitor, this);
-		pm.registerEvent(Type.PLAYER_MOVE, tpl, Priority.Monitor, this);
 
 		mmoTargetEntityListener tel = new mmoTargetEntityListener();
-		pm.registerEvent(Type.ENTITY_DEATH, tel, Priority.Monitor, this);
 		pm.registerEvent(Type.ENTITY_DAMAGE, tel, Priority.Monitor, this);
-		pm.registerEvent(Type.ENTITY_EXPLODE, tel, Priority.Monitor, this);
-		pm.registerEvent(Type.PROJECTILE_HIT, tel, Priority.Monitor, this); // craftbukkit 1000
-
-		updateTask = server.getScheduler().scheduleSyncRepeatingTask(this,
-				  new Runnable() {
-
-					  @Override
-					  public void run() {
-						  MMOTarget.updateAll();
-					  }
-				  }, 20, 20);
 	}
 
 	@Override
@@ -93,58 +75,63 @@ public class MMOTarget extends MMOPlugin {
 	}
 
 	@Override
-	public void onDisable() {
-		server.getScheduler().cancelTask(updateTask);
-		targets.clear();
-		super.onDisable();
+	public void onSpoutCraftPlayer(SpoutPlayer player) {
+		Container container = getContainer(player, config_ui_align, config_ui_left, config_ui_top);
+		perPlayer bar = new perPlayer(player);
+		container.addChild(bar).setLayout(ContainerType.VERTICAL);
+		data.put(player, bar);
 	}
 
 	@Override
-	public void onSpoutCraftPlayer(SpoutPlayer player) {
-		Container container = getContainer(player, config_ui_align, config_ui_left, config_ui_top).setAuto(false);
-		containers.put(player, container);
+	public void onPlayerQuit(Player player) {
+		data.remove(player);
 	}
 
-//	@SuppressWarnings("unchecked")
-	public static void updateAll() {
-		for (Player player : ((HashMap<Player, LivingEntity>) targets.clone()).keySet()) {
-			update(player);
+	public final class perPlayer extends GenericLivingEntity {
+
+		protected final SpoutPlayer player;
+		protected LivingEntity target = null;
+		protected LivingEntity target2 = null;
+
+		public perPlayer(SpoutPlayer player) {
+			this.player = player;
+			setEntity((LivingEntity) null);
+			setVisible(false);
 		}
-	}
 
-	public static void update(Player player) {
-		LivingEntity target = targets.get(player);
-		if (target != null) {
-			int health = MMO.getHealth(target);
-			if (!target.isDead()
-					  && health > 0
-					  && player.getWorld() == target.getWorld()
-					  && player.getLocation().distance(target.getLocation()) <= config_max_range) {
-				if (SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
-					GenericLivingEntity bar = bars.get(player);
-					if (bar == null) {
-						bars.put(player, bar = new GenericLivingEntity());
-						Container container = containers.get(player);
-						container.addChild(bar);
-					}
-					bar.setEntity(target);
-					if (target instanceof Player && targets.containsKey((Player) target)) {
-						bar.setTargets(targets.get((Player) target));
+		public void setTarget(LivingEntity target) {
+			if (target != this.target) {
+				this.target = target;
+				setEntity(target);
+				setVisible(target != null);
+			}
+		}
+
+		public LivingEntity getTarget() {
+			return target;
+		}
+
+		@Override
+		public void onTick() {
+			if (target != null) {
+				int health = MMO.getHealth(target);
+				if (!target.isDead()
+						&& health > 0
+						&& player.getWorld() == target.getWorld()
+						&& player.getLocation().distance(target.getLocation()) <= config_max_range) {
+					if (target instanceof Player && data.containsKey((Player) target)) {
+						setTargets(data.get((Player) target).target);
 					} else if (target instanceof Creature && ((Creature) target).getTarget() != null && !((Creature) target).getTarget().isDead()) {
-						bar.setTargets(((Creature) target).getTarget());
+						setTargets(((Creature) target).getTarget());
 					} else {
-						bar.setTargets();
+						setTargets();
 					}
-				}
-			} else {
-				targets.remove(player);
-				if (SpoutManager.getPlayer(player).isSpoutCraftEnabled()) {
-					GenericLivingEntity bar = bars.remove(player);
-					if (bar != null) {
-						bar.getContainer().removeChild(bar);
-					}
+				} else {
+					setTargets();
+					setTarget(null);
 				}
 			}
+			super.onTick();
 		}
 	}
 
@@ -152,75 +139,27 @@ public class MMOTarget extends MMOPlugin {
 
 		@Override
 		public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-			Player player = event.getPlayer();
 			Entity target = event.getRightClicked();
-			if (target instanceof LivingEntity) {
-				targets.put(player, (LivingEntity) target);
-				update(player);
+			perPlayer per = data.get(event.getPlayer());
+			if (target instanceof LivingEntity && per != null) {
+				per.setTarget((LivingEntity) target);
 			}
-		}
-
-		@Override
-		public void onPlayerMove(PlayerMoveEvent event) {
-			Player player = event.getPlayer();
-			update(player);
 		}
 	}
 
 	private class mmoTargetEntityListener extends EntityListener {
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void onEntityDeath(EntityDeathEvent event) {
-			Entity target = event.getEntity();
-			if (target instanceof LivingEntity && targets.containsValue((LivingEntity) target)) {
-				for (Player player : ((HashMap<Player, LivingEntity>) targets.clone()).keySet()) {
-					if (target.equals(targets.get(player))) {
-						update(player);
-					}
-				}
-			}
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void onEntityExplode(EntityExplodeEvent event) {
-			if (event.isCancelled()) {
-				return;
-			}
-			Entity target = event.getEntity();
-			if (target instanceof LivingEntity && targets.containsValue((LivingEntity) target)) {
-				for (Player player : ((HashMap<Player, LivingEntity>) targets.clone()).keySet()) {
-					if (target.equals(targets.get(player))) {
-						update(player);
-					}
-				}
-			}
-		}
 
 		@Override
 		public void onEntityDamage(EntityDamageEvent event) {
 			if (event.isCancelled()) {
 				return;
 			}
-			LivingEntity attacker = null, defender = null;
-			if (event.getEntity() instanceof LivingEntity) {
-				defender = (LivingEntity) event.getEntity();
-			} else if (event.getEntity() instanceof Tameable) {
-				Tameable pet = (Tameable) event.getEntity();
-				if (pet.isTamed() && pet.getOwner() instanceof Player) {
-					defender = (Player) pet.getOwner();
-				}
-			}
+			LivingEntity attacker = null;
+			Entity defender = event.getEntity();
 			if (event.getCause() == DamageCause.ENTITY_ATTACK) {
 				EntityDamageByEntityEvent e = (EntityDamageByEntityEvent) event;
 				if (e.getDamager() instanceof LivingEntity) {
 					attacker = (LivingEntity) e.getDamager();
-				} else if (e.getDamager() instanceof Tameable) {
-					Tameable pet = (Tameable) e.getDamager();
-					if (pet.isTamed() && pet.getOwner() instanceof Player) {
-						defender = (Player) pet.getOwner();
-					}
 				}
 			} else if (event.getCause() == DamageCause.PROJECTILE) {
 				EntityDamageByEntityEvent e = (EntityDamageByEntityEvent) event;
@@ -229,13 +168,11 @@ public class MMOTarget extends MMOPlugin {
 					attacker = arrow.getShooter();
 				}
 			}
-			if (defender instanceof Player && attacker != null && !targets.containsKey((Player) defender)) {
-				targets.put((Player) defender, attacker);
-				update((Player) defender);
-			}
-			if (attacker instanceof Player && defender != null) {
-				targets.put((Player) attacker, defender);
-				update((Player) attacker);
+			if (attacker instanceof Player && defender instanceof LivingEntity && !attacker.equals(defender)) {
+				perPlayer per = data.get(attacker);
+				if (per != null) {
+					per.setTarget((LivingEntity) defender);
+				}
 			}
 		}
 	}
