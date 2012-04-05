@@ -17,27 +17,32 @@
 package mmo.Target;
 
 import java.util.HashMap;
-import mmo.Core.gui.GenericLivingEntity;
+
 import mmo.Core.MMO;
 import mmo.Core.MMOPlugin;
-import mmo.Core.util.EnumBitSet;
-import org.bukkit.entity.*;
-import org.bukkit.event.Event.Priority;
-import org.bukkit.event.Event.Type;
+import mmo.Core.gui.GenericLivingEntity;
+
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Creature;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerListener;
-import org.bukkit.util.config.Configuration;
+import org.bukkit.event.player.PlayerQuitEvent;
+
+import org.getspout.spoutapi.SpoutManager;
+import org.getspout.spoutapi.event.spout.SpoutCraftEnableEvent;
 import org.getspout.spoutapi.gui.Container;
 import org.getspout.spoutapi.gui.ContainerType;
-import org.getspout.spoutapi.gui.GenericContainer;
 import org.getspout.spoutapi.player.SpoutPlayer;
 
 public class MMOTarget extends MMOPlugin {
-
 	protected static final HashMap<Player, perPlayer> data = new HashMap<Player, perPlayer>();
 	/**
 	 * Config values
@@ -49,24 +54,13 @@ public class MMOTarget extends MMOPlugin {
 	static int config_max_range = 15;
 
 	@Override
-	public EnumBitSet mmoSupport(EnumBitSet support) {
-		support.set(Support.MMO_PLAYER);
-		return support;
-	}
-
-	@Override
 	public void onEnable() {
 		super.onEnable();
-
-		mmoTargetPlayerListener tpl = new mmoTargetPlayerListener();
-		pm.registerEvent(Type.PLAYER_INTERACT_ENTITY, tpl, Priority.Monitor, this);
-
-		mmoTargetEntityListener tel = new mmoTargetEntityListener();
-		pm.registerEvent(Type.ENTITY_DAMAGE, tel, Priority.Monitor, this);
+		pm.registerEvents(new mmoTargetListener(), this);
 	}
 
 	@Override
-	public void loadConfiguration(Configuration cfg) {
+	public void loadConfiguration(FileConfiguration cfg) {
 		config_ui_align = cfg.getString("ui.default.align", config_ui_align);
 		config_ui_left = cfg.getInt("ui.default.left", config_ui_left);
 		config_ui_top = cfg.getInt("ui.default.top", config_ui_top);
@@ -74,21 +68,7 @@ public class MMOTarget extends MMOPlugin {
 		config_max_range = cfg.getInt("max_range", config_max_range);
 	}
 
-	@Override
-	public void onSpoutCraftPlayer(SpoutPlayer player) {
-		Container container = getContainer(player, config_ui_align, config_ui_left, config_ui_top);
-		perPlayer bar = new perPlayer(player);
-		container.addChild(bar).setLayout(ContainerType.VERTICAL);
-		data.put(player, bar);
-	}
-
-	@Override
-	public void onPlayerQuit(Player player) {
-		data.remove(player);
-	}
-
 	public final class perPlayer extends GenericLivingEntity {
-
 		protected final SpoutPlayer player;
 		protected LivingEntity target = null;
 		protected LivingEntity target2 = null;
@@ -135,9 +115,8 @@ public class MMOTarget extends MMOPlugin {
 		}
 	}
 
-	private static class mmoTargetPlayerListener extends PlayerListener {
-
-		@Override
+	private class mmoTargetListener implements Listener {
+		@EventHandler
 		public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
 			Entity target = event.getRightClicked();
 			perPlayer per = data.get(event.getPlayer());
@@ -145,11 +124,8 @@ public class MMOTarget extends MMOPlugin {
 				per.setTarget((LivingEntity) target);
 			}
 		}
-	}
 
-	private class mmoTargetEntityListener extends EntityListener {
-
-		@Override
+		@EventHandler
 		public void onEntityDamage(EntityDamageEvent event) {
 			if (event.isCancelled()) {
 				return;
@@ -174,6 +150,20 @@ public class MMOTarget extends MMOPlugin {
 					per.setTarget((LivingEntity) defender);
 				}
 			}
+		}
+
+		@EventHandler
+		public void onSpoutcraftEnable(SpoutCraftEnableEvent event) {
+			SpoutPlayer player = SpoutManager.getPlayer(event.getPlayer());
+			Container container = getContainer(player, config_ui_align, config_ui_left, config_ui_top);
+			perPlayer bar = new perPlayer(player);
+			container.addChild(bar).setLayout(ContainerType.VERTICAL);
+			data.put(player, bar);
+		}
+
+		@EventHandler
+		public void onPlayerQuit(PlayerQuitEvent event) {
+			data.remove(event.getPlayer());
 		}
 	}
 }
