@@ -74,6 +74,11 @@ public class MMOTarget extends MMOPlugin {
 		protected LivingEntity target2 = null;
 
 		public perPlayer(SpoutPlayer player) {
+			this(player, 80);
+		}
+		
+		public perPlayer(SpoutPlayer player, int width) {
+			super(width);
 			this.player = player;
 			setEntity((LivingEntity) null);
 			setVisible(false);
@@ -116,6 +121,7 @@ public class MMOTarget extends MMOPlugin {
 	}
 
 	private class mmoTargetListener implements Listener {
+		@SuppressWarnings("unused")
 		@EventHandler
 		public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
 			Entity target = event.getRightClicked();
@@ -125,6 +131,7 @@ public class MMOTarget extends MMOPlugin {
 			}
 		}
 
+		@SuppressWarnings("unused")
 		@EventHandler
 		public void onEntityDamage(EntityDamageEvent event) {
 			if (event.isCancelled()) {
@@ -152,15 +159,18 @@ public class MMOTarget extends MMOPlugin {
 			}
 		}
 
+		@SuppressWarnings("unused")
 		@EventHandler
 		public void onSpoutcraftEnable(SpoutCraftEnableEvent event) {
 			SpoutPlayer player = SpoutManager.getPlayer(event.getPlayer());
 			Container container = getContainer(player, config_ui_align, config_ui_left, config_ui_top);
-			perPlayer bar = new perPlayer(player);
+			perPlayer bar = new perPlayer(player,config_ui_maxwidth);
 			container.addChild(bar).setLayout(ContainerType.VERTICAL);
+			container.setVisible(false);
 			data.put(player, bar);
 		}
 
+		@SuppressWarnings("unused")
 		@EventHandler
 		public void onPlayerQuit(PlayerQuitEvent event) {
 			data.remove(event.getPlayer());
