@@ -1,8 +1,8 @@
 name: mmoTarget
-main: mmo.Target.MMOTarget
-version: 1.3
-website: http://forums.bukkit.org/threads/31056/
-author: Rycochet <rycochet@rycochet.com>
-depend: [Spout,mmoCore]
+version: ${releaseVersion} b${buildNumber}
+description: Provides a visible target display, including health, pet's owner and target's target.
+author: mmoMinecraftDev
+website: http://mmo.me.uk
 
-description: Lets you target an enemy (or friend) showing their health on the screen.
+main: mmo.Target.MMOTarget
+depend: [Spout, mmoCore]
