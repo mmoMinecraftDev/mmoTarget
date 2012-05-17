@@ -1,5 +1,5 @@
 name: mmoTarget
-version: ${releaseVersion} b${buildNumber}
+version: ${releaseVersion}.${buildNumber}
 description: Provides a visible target display, including health, pet's owner and target's target.
 author: mmoMinecraftDev
 website: http://mmo.me.uk
