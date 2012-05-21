@@ -20,7 +20,9 @@ import java.util.HashMap;
 
 import mmo.Core.MMO;
 import mmo.Core.MMOPlugin;
+import mmo.Core.MMOPlugin.Support;
 import mmo.Core.gui.GenericLivingEntity;
+import mmo.Core.util.EnumBitSet;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Creature;
@@ -53,6 +55,12 @@ public class MMOTarget extends MMOPlugin {
 	static int config_ui_maxwidth = 160;
 	static int config_max_range = 15;
 
+	@Override
+	public EnumBitSet mmoSupport(final EnumBitSet support) {
+		support.set(Support.MMO_AUTO_EXTRACT);
+		return support;
+	}
+	
 	@Override
 	public void onEnable() {
 		super.onEnable();

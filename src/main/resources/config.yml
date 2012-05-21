@@ -1,0 +1,8 @@
+#Target Configuration
+max_range: 15
+ui:
+    default:
+        width: 160
+        align: TOP_CENTER
+        left: 0
+        top: 3
