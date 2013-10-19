@@ -107,7 +107,7 @@ public class MMOTarget extends MMOPlugin {
 		@Override
 		public void onTick() {
 			if (target != null) {
-				int health = MMO.getHealth(target);
+				double health = MMO.getHealth(target);
 				if (!target.isDead()
 						&& health > 0
 						&& player.getWorld() == target.getWorld()
@@ -129,7 +129,6 @@ public class MMOTarget extends MMOPlugin {
 	}
 
 	private class mmoTargetListener implements Listener {
-		@SuppressWarnings("unused")
 		@EventHandler
 		public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
 			Entity target = event.getRightClicked();
@@ -139,7 +138,6 @@ public class MMOTarget extends MMOPlugin {
 			}
 		}
 
-		@SuppressWarnings("unused")
 		@EventHandler
 		public void onEntityDamage(EntityDamageEvent event) {
 			if (event.isCancelled()) {
@@ -167,7 +165,6 @@ public class MMOTarget extends MMOPlugin {
 			}
 		}
 
-		@SuppressWarnings("unused")
 		@EventHandler
 		public void onSpoutcraftEnable(SpoutCraftEnableEvent event) {
 			SpoutPlayer player = SpoutManager.getPlayer(event.getPlayer());
@@ -178,7 +175,6 @@ public class MMOTarget extends MMOPlugin {
 			data.put(player, bar);
 		}
 
-		@SuppressWarnings("unused")
 		@EventHandler
 		public void onPlayerQuit(PlayerQuitEvent event) {
 			data.remove(event.getPlayer());
